@@ -61,3 +61,30 @@ for i in range(60, len(train_data)):
         print(y_train)
         print()
 
+#Convert the x_train and y_train to numpy arrays (so we can use to train LSTM model)
+x_train, y_train = np.array(x_train), np.array(y_train)
+ 
+'''Reshape the data (because a LSTM network expects the input to be 3-dimensional, 
+in form of # of samples, # of timesteps, # of features) '''
+
+x_train = np.reshape(x_train, (x_train.shape[0],x_train.shape[1],1))
+x_train.shape 
+
+print(x_train)
+
+#Build the LSTM Model 
+model = Sequential()
+model.add(LSTM(50,return_sequences=True,input_shape=(x_train.shape[1],1)))
+model.add(LSTM(50, return_sequences=False)) 
+model.add(Dense(25))
+model.add(Dense(1))
+
+
+#Compile the model 
+#The optimizer is used to improve upon the loss function,
+#the loss function is used to measure how well the model did on training 
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+#Train the model 
+model.fit(x_train, y_train, batch_size =1, epochs=1)
+#Epoch is the number of iteration when an entire datset is passed forward and backward through a nerual network
