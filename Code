@@ -116,34 +116,48 @@ plt.show()
 print(valid)
 
 # Get the quote for a new prediction
-new_df = yf.download('AAPL', start='2012-01-01', end='2019-12-17')
+new_df = yf.download('AAPL', start='2019-12-10', end='2019-12-17')
+print("Downloaded new data head: \n", new_df.head())
+print("Downloaded new data shape: ", new_df.shape)
 
-# Create a new dataframe
-new_df = new_df.filter(['Close'])
+# Check if the DataFrame is empty
+if not new_df.empty:
+    # Create a new dataframe
+    new_df = new_df.filter(['Close'])
+    print("New DataFrame head: \n", new_df.head())
+    print("New DataFrame shape: ", new_df.shape)
 
-# Get the last 60-day closing price values and convert the dataframe to an array
-last_60_days = new_df[-60:].values
+    # Get the last 60-day closing price values and convert the dataframe to an array
+    last_60_days = new_df[-60:].values
+    print("Last 60 days shape: ", last_60_days.shape)
+    print("Last 60 days data: \n", last_60_days)
 
-# Scale the data 
-last_60_days_scaled = scaler.transform(last_60_days)
+    # Scale the data 
+    if last_60_days.shape[1] != 0:
+        last_60_days_scaled = scaler.transform(last_60_days)
+    else:
+        print("Error: last_60_days has zero features")
 
-# Create an empty list and append the past 60 days
-X_test = []
-X_test.append(last_60_days_scaled)
+    # Create an empty list and append the past 60 days
+    X_test = []
+    X_test.append(last_60_days_scaled)
 
-# Convert X_test to numpy array
-X_test = np.array(X_test)
+    # Convert X_test to numpy array
+    X_test = np.array(X_test)
+    print("X_test shape: ", X_test.shape)
 
-# Reshape X_test
-X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+    # Reshape X_test
+    X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-# Get the predicted scaled price
-pred_price = model.predict(X_test)
+    # Get the predicted scaled price
+    pred_price = model.predict(X_test)
 
-# Undo the scaling
-pred_price = scaler.inverse_transform(pred_price)
-print("Predicted price:", pred_price)
+    # Undo the scaling
+    pred_price = scaler.inverse_transform(pred_price)
+    print("Predicted price:", pred_price)
 
-# Get actual stock price on the next day
-actual_quote = yf.download('AAPL', start='2019-12-18', end='2019-12-18')
-print("Actual price:", actual_quote['Close'])
+    # Get actual stock price on the next day
+    actual_quote = yf.download('AAPL', start='2019-12-18', end='2019-12-18')
+    print("Actual price:", actual_quote['Close'])
+else:
+    print("Error: No data fetched for the specified date range.")
