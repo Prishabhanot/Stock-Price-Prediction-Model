@@ -2,6 +2,8 @@
 
 This project demonstrates a stock price prediction model for **Apple Inc. (AAPL)** using a **Long Short-Term Memory (LSTM)** neural network. The model is trained on historical stock price data, and after training, it predicts the future price of Apple stock based on the last 60 days of closing prices.
 
+![Stock Prediction](images/StockPredictionSample.png)
+
 ### **Features 📝**
 - **Data Collection:** Fetches historical stock price data for Apple Inc. from Yahoo Finance using the `yfinance` library.
 - **Data Preprocessing:** Scales the stock price data using `MinMaxScaler` to improve the performance of the LSTM model.
