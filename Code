@@ -1,126 +1,109 @@
 import math
 import numpy as np
 import pandas as pd
-import yfinance as yf  #Using yfinance instead of pandas_datareader
+import yfinance as yf  # Using yfinance instead of pandas_datareader
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 import matplotlib.pyplot as plt
 
-#Getting the stock quote
+# Getting the stock quote
 df = yf.download('AAPL', start='2012-01-01', end='2019-12-17')
-#Show the data
+# Show the data
 print(df.head())
 
-#The number of rows and columns
+# The number of rows and columns
 print(df.shape)
 
-#Visualizing Closing Price History
-plt.figure(figsize=(16,8))
+# Visualizing Closing Price History
+plt.figure(figsize=(16, 8))
 plt.title('Close Price History')
 plt.plot(df['Close'])
 plt.xlabel('Date', fontsize=18)
 plt.ylabel('Close Price USD($)', fontsize=18)
 plt.show()
 
-#Creating a new dataframe with only the 'Close' column
-dta = df[['Close']]  # Must use double brackets to correctly filter the 'Close' column
+# Creating a new dataframe with only the 'Close' column
+dta = df[['Close']]
 print("Filtered dataframe (dta) head: \n", dta.head())
 print("Filtered dataframe (dta) shape: ", dta.shape)
 
-#Convert dataframe to a numpy array
+# Convert dataframe to a numpy array
 dataset = dta.values
-print("Dataset shape: ", dataset.shape)  
+print("Dataset shape: ", dataset.shape)
 
-#Get the number of rows to train the LSTM model on
+# Get the number of rows to train the LSTM model on
 training_data_len = math.ceil(len(dataset) * .8)
 print("Training data length: ", training_data_len)
 
-''' Scale the Data (as its good practise to apply preprocessing transformations,
-such as scaling before its presented to a neural network '''
-
+# Scale the Data
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled_data = scaler.fit_transform(dataset)
 
 # Check the first few rows of the scaled data
 print(scaled_data)
 
-#Create the training data set 
-#Create the scaled training data set
-train_data = scaled_data[0:training_data_len,:]
-#Split the data into x_train and y_train data sets
-x_train =[]
-y_train=[]
+# Create the training data set 
+train_data = scaled_data[0:training_data_len, :]
+x_train = []
+y_train = []
 
 for i in range(60, len(train_data)):
-    x_train.append(train_data[i-60:i,0])
-    y_train.append(train_data[i,0])
+    x_train.append(train_data[i-60:i, 0])
+    y_train.append(train_data[i, 0])
 
-    if i<=60:
-        print(x_train)
-        print(y_train)
-        print()
-
-#Convert the x_train and y_train to numpy arrays (so we can use to train LSTM model)
+# Convert the x_train and y_train to numpy arrays
 x_train, y_train = np.array(x_train), np.array(y_train)
- 
-'''Reshape the data (because a LSTM network expects the input to be 3-dimensional, 
-in form of # of samples, # of timesteps, # of features) '''
 
-x_train = np.reshape(x_train, (x_train.shape[0],x_train.shape[1],1))
-x_train.shape 
+# Reshape the data 
+x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+print(x_train.shape)
 
-print(x_train)
-
-#Build the LSTM Model 
+# Build the LSTM Model 
 model = Sequential()
-model.add(LSTM(50,return_sequences=True,input_shape=(x_train.shape[1],1)))
+model.add(LSTM(50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
 model.add(LSTM(50, return_sequences=False)) 
 model.add(Dense(25))
 model.add(Dense(1))
 
-
-#Compile the model 
-#The optimizer is used to improve upon the loss function,
-#the loss function is used to measure how well the model did on training 
+# Compile the model 
 model.compile(optimizer='adam', loss='mean_squared_error')
 
-#Train the model 
-model.fit(x_train, y_train, batch_size =1, epochs=1)
-#Epoch is the number of iteration when an entire datset is passed forward and backward through a neural network
+# Train the model 
+model.fit(x_train, y_train, batch_size=1, epochs=1)
 
-#Create the testing data set
-test_data = scaled_data[training_data_len - 60: , :] 
+# Create the testing data set
+test_data = scaled_data[training_data_len - 60:, :]
 
-#Create the data sets x_test and y_test
+# Create the data sets x_test and y_test
 x_test = []
 y_test = dataset[training_data_len:, :]
 
 for i in range(60, len(test_data)):
     x_test.append(test_data[i-60:i, 0])
 
-#Convert x_test to numpy array
+# Convert x_test to numpy array
 x_test = np.array(x_test)
 
-#Reshape x_test
+# Reshape x_test
 x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
 
-#Get the models predicted price values
+# Get the models predicted price values
 predictions = model.predict(x_test)
 predictions = scaler.inverse_transform(predictions)
 
-#Get the root mean squared error (RMSE)
+# Get the root mean squared error (RMSE)
 rmse = np.sqrt(np.mean(((predictions - y_test) ** 2)))
 print("RMSE:", rmse)
 
-#Plot the data
+# Plot the data
 train = dta[:training_data_len]
 valid = dta[training_data_len:]
-valid = valid.copy()  #Make a copy to avoid SettingWithCopyWarning
+valid = valid.copy()  # Make a copy to avoid SettingWithCopyWarning
 valid.loc[:, 'Predictions'] = predictions
 
-#Visualize the data
-plt.figure(figsize=(16,8))
+# Visualize the data
+plt.figure(figsize=(16, 8))
 plt.title('Model')
 plt.xlabel('Date', fontsize=18)
 plt.ylabel('Close Price USD ($)', fontsize=18)
@@ -129,38 +112,38 @@ plt.plot(valid[['Close', 'Predictions']])
 plt.legend(['Train', 'Val', 'Predictions'], loc='lower right')
 plt.show()
 
-#Show the valid and predicted prices
+# Show the valid and predicted prices
 print(valid)
 
-#Get the quote for a new prediction
+# Get the quote for a new prediction
 new_df = yf.download('AAPL', start='2012-01-01', end='2019-12-17')
 
-#Create a new dataframe
+# Create a new dataframe
 new_df = new_df.filter(['Close'])
 
-#Get the last 60-day closing price values and convert the dataframe to an array
+# Get the last 60-day closing price values and convert the dataframe to an array
 last_60_days = new_df[-60:].values
 
-#Scale the data 
+# Scale the data 
 last_60_days_scaled = scaler.transform(last_60_days)
 
-#Create an empty list and append the past 60 days
+# Create an empty list and append the past 60 days
 X_test = []
 X_test.append(last_60_days_scaled)
 
-#Convert X_test to numpy array
+# Convert X_test to numpy array
 X_test = np.array(X_test)
 
-#Reshape X_test
+# Reshape X_test
 X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-#Get the predicted scaled price
+# Get the predicted scaled price
 pred_price = model.predict(X_test)
 
-#Undo the scaling
+# Undo the scaling
 pred_price = scaler.inverse_transform(pred_price)
 print("Predicted price:", pred_price)
 
-#Get actual stock price on the next day
+# Get actual stock price on the next day
 actual_quote = yf.download('AAPL', start='2019-12-18', end='2019-12-18')
 print("Actual price:", actual_quote['Close'])
